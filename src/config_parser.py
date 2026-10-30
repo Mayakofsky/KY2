@@ -14,13 +14,15 @@ class ConfigParser:
         self.file_path = file_path
         self.config_data = {}
 
-    def load_config(self):
-        """Загрузка и валидация конфигурационного файла.
+    def _validate_file_and_section(self):
+        """Проверка существования файла и наличия секции [Settings].
+
+        Returns:
+            configparser.SectionProxy: секция Settings.
 
         Raises:
-            FileNotFoundError: Если файл конфигурации не найден.
-            ValueError: Если отсутствует секция [Settings],
-                обязательный параметр или неверный тип данных.
+            FileNotFoundError: Если файл не найден.
+            ValueError: Если секция [Settings] отсутствует.
         """
         if not os.path.exists(self.file_path):
             raise FileNotFoundError(
@@ -35,16 +37,23 @@ class ConfigParser:
                 "Секция [Settings] отсутствует в файле."
             )
 
-        settings = parser['Settings']
+        return parser['Settings']
 
+    def _parse_settings(self, settings):
+        """Парсинг и валидация параметров из секции Settings.
+
+        Args:
+            settings: Секция Settings из ConfigParser.
+
+        Raises:
+            ValueError: Если параметр отсутствует или тип неверен.
+        """
+        required = (
+            'package_name', 'repo_url', 'test_mode',
+            'package_version', 'max_depth'
+        )
         settings_dict = dict(settings)
-        missing = [
-            key for key in (
-                'package_name', 'repo_url', 'test_mode',
-                'package_version', 'max_depth'
-            )
-            if key not in settings_dict
-        ]
+        missing = [k for k in required if k not in settings_dict]
         if missing:
             raise ValueError(
                 f"Отсутствует обязательный параметр: {missing[0]}"
@@ -63,6 +72,17 @@ class ConfigParser:
                 "Неверный тип данных: max_depth должно быть "
                 "целым числом, test_mode — True/False."
             )
+
+    def load_config(self):
+        """Загрузка и валидация конфигурационного файла.
+
+        Raises:
+            FileNotFoundError: Если файл конфигурации не найден.
+            ValueError: Если отсутствует секция [Settings],
+                обязательный параметр или неверный тип данных.
+        """
+        settings = self._validate_file_and_section()
+        self._parse_settings(settings)
 
     def display_config(self):
         """Вывод всех параметров конфигурации в формате ключ-значение."""
