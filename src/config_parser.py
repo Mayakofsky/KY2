@@ -37,6 +37,19 @@ class ConfigParser:
 
         settings = parser['Settings']
 
+        settings_dict = dict(settings)
+        missing = [
+            key for key in (
+                'package_name', 'repo_url', 'test_mode',
+                'package_version', 'max_depth'
+            )
+            if key not in settings_dict
+        ]
+        if missing:
+            raise ValueError(
+                f"Отсутствует обязательный параметр: {missing[0]}"
+            )
+
         try:
             self.config_data = {
                 'package_name': settings['package_name'],
@@ -45,10 +58,6 @@ class ConfigParser:
                 'package_version': settings['package_version'],
                 'max_depth': settings.getint('max_depth')
             }
-        except KeyError as missing_key:
-            raise ValueError(
-                f"Отсутствует обязательный параметр: {missing_key}"
-            )
         except ValueError:
             raise ValueError(
                 "Неверный тип данных: max_depth должно быть "
